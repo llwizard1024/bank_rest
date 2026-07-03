@@ -41,8 +41,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-liquibase</artifactId>
         </dependency>
 
         <!-- Security + JWT -->
@@ -81,7 +81,7 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- Dev tools (optional, remove for production builds if desired) -->
+        <!-- Dev tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
