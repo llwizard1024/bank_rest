@@ -1,0 +1,309 @@
+{
+  "info": {
+    "_postman_id": "bank-rest-api-collection",
+    "name": "Bank Cards API",
+    "description": "Коллекция для bank_rest (localhost:8080).\n\nПорядок:\n1. Register → Login (токен сохранится автоматически)\n2. ADMIN: Create User / Create Card\n3. USER: My Cards, Transfer\n\nПереводы — только между своими картами (один ownerId).\n\nТестовые номера карт (Luhn): 4111111111111111, 5555555555554444",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "username", "value": "testuser" },
+    { "key": "password", "value": "password123" },
+    { "key": "userId", "value": "1" },
+    { "key": "cardId", "value": "1" },
+    { "key": "cardId2", "value": "2" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('token', body.token);",
+                  "    pm.collectionVariables.set('username', body.username);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cards",
+      "item": [
+        {
+          "name": "Create Card (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('cardId', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ownerId\": {{userId}},\n  \"cardNumber\": \"4111111111111111\",\n  \"expiryDate\": \"2028-12-31\",\n  \"balance\": 1000.00\n}"
+            },
+            "url": "{{baseUrl}}/api/cards"
+          }
+        },
+        {
+          "name": "Create Card 2 (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('cardId2', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ownerId\": {{userId}},\n  \"cardNumber\": \"5555555555554444\",\n  \"expiryDate\": \"2028-06-30\",\n  \"balance\": 500.00\n}"
+            },
+            "url": "{{baseUrl}}/api/cards"
+          }
+        },
+        {
+          "name": "Get All Cards (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cards?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "status", "value": "ACTIVE", "disabled": true },
+                { "key": "search", "value": "1111", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Cards",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/my?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "my"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "status", "value": "ACTIVE", "disabled": true },
+                { "key": "search", "value": "1111", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Card By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cards/{{cardId}}"
+          }
+        },
+        {
+          "name": "Block Card (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/cards/{{cardId}}/block"
+          }
+        },
+        {
+          "name": "Activate Card (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/cards/{{cardId}}/activate"
+          }
+        },
+        {
+          "name": "Block Request (USER)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cards/{{cardId}}/block-request"
+          }
+        },
+        {
+          "name": "Delete Card (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/cards/{{cardId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfers",
+      "item": [
+        {
+          "name": "Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromCardId\": {{cardId}},\n  \"toCardId\": {{cardId2}},\n  \"amount\": 100.50\n}"
+            },
+            "url": "{{baseUrl}}/api/transfers"
+          }
+        },
+        {
+          "name": "Get My Transfers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/my?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "my"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (ADMIN)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('userId', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"password123\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/users/{{userId}}/status"
+          }
+        }
+      ]
+    }
+  ]
+}
