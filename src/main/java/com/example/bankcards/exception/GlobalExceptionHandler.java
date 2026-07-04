@@ -51,6 +51,11 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Map<String, Object>> handleInsufficientFunds(InsufficientFundsException ex) {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());

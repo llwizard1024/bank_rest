@@ -14,8 +14,16 @@ public final class CardNumberUtils {
         if (digits.length() < 4) {
             throw new IllegalArgumentException("Card number is too short");
         }
-        String lastFour = digits.substring(digits.length() - 4);
+        String lastFour = lastFour(digits);
         return "**** **** **** " + lastFour;
+    }
+
+    public static String lastFour(String cardNumber) {
+        String digits = normalize(cardNumber);
+        if (digits.length() < 4) {
+            throw new IllegalArgumentException("Card number is too short");
+        }
+        return digits.substring(digits.length() - 4);
     }
 
     public static boolean isValid(String cardNumber) {

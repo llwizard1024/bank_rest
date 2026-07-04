@@ -39,6 +39,9 @@ public class Card {
     @Column(name = "encrypted_card_number", nullable = false, length = 512)
     private String encryptedCardNumber;
 
+    @Column(name = "last_four_digits", length = 4)
+    private String lastFourDigits;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

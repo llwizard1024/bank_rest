@@ -29,6 +29,19 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     Page<Card> findByStatus(CardStatus status, Pageable pageable);
 
     @EntityGraph(attributePaths = "owner")
+    Page<Card> findByLastFourDigits(String lastFourDigits, Pageable pageable);
+
+    @EntityGraph(attributePaths = "owner")
+    Page<Card> findByStatusAndLastFourDigits(CardStatus status, String lastFourDigits, Pageable pageable);
+
+    @EntityGraph(attributePaths = "owner")
+    Page<Card> findByOwnerIdAndLastFourDigits(Long ownerId, String lastFourDigits, Pageable pageable);
+
+    @EntityGraph(attributePaths = "owner")
+    Page<Card> findByOwnerIdAndStatusAndLastFourDigits(
+            Long ownerId, CardStatus status, String lastFourDigits, Pageable pageable);
+
+    @EntityGraph(attributePaths = "owner")
     Optional<Card> findByIdAndOwnerId(Long id, Long ownerId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

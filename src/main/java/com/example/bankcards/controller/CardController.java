@@ -42,17 +42,19 @@ public class CardController {
     @PreAuthorize("hasRole('ADMIN')")
     public Page<CardResponse> getAllCards(
             @RequestParam(required = false) CardStatus status,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return cardService.getAllCards(status, pageable);
+        return cardService.getAllCards(status, search, pageable);
     }
 
     @GetMapping("/my")
     public Page<CardResponse> getMyCards(
             @RequestParam(required = false) CardStatus status,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return cardService.getMyCards(status, pageable);
+        return cardService.getMyCards(status, search, pageable);
     }
 
     @GetMapping("/{id}")

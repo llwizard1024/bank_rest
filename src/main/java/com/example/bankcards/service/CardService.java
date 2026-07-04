@@ -52,6 +52,7 @@ public class CardService {
 
         Card card = Card.builder()
                 .encryptedCardNumber(cardCryptoService.encrypt(normalizedNumber))
+                .lastFourDigits(CardNumberUtils.lastFour(normalizedNumber))
                 .owner(owner)
                 .expiryDate(request.getExpiryDate())
                 .status(status)
@@ -62,19 +63,36 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CardResponse> getAllCards(CardStatus status, Pageable pageable) {
-        Page<Card> cards = status == null
-                ? cardRepository.findAll(pageable)
-                : cardRepository.findByStatus(status, pageable);
+    public Page<CardResponse> getAllCards(CardStatus status, String search, Pageable pageable) {
+        String lastFour = hasSearch(search) ? normalizeSearch(search) : null;
+        Page<Card> cards;
+        if (lastFour != null) {
+            cards = status == null
+                    ? cardRepository.findByLastFourDigits(lastFour, pageable)
+                    : cardRepository.findByStatusAndLastFourDigits(status, lastFour, pageable);
+        } else {
+            cards = status == null
+                    ? cardRepository.findAll(pageable)
+                    : cardRepository.findByStatus(status, pageable);
+        }
         return cards.map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<CardResponse> getMyCards(CardStatus status, Pageable pageable) {
+    public Page<CardResponse> getMyCards(CardStatus status, String search, Pageable pageable) {
+        String lastFour = hasSearch(search) ? normalizeSearch(search) : null;
         User currentUser = getCurrentUser();
-        Page<Card> cards = status == null
-                ? cardRepository.findByOwnerId(currentUser.getId(), pageable)
-                : cardRepository.findByOwnerIdAndStatus(currentUser.getId(), status, pageable);
+        Page<Card> cards;
+        if (lastFour != null) {
+            cards = status == null
+                    ? cardRepository.findByOwnerIdAndLastFourDigits(currentUser.getId(), lastFour, pageable)
+                    : cardRepository.findByOwnerIdAndStatusAndLastFourDigits(
+                            currentUser.getId(), status, lastFour, pageable);
+        } else {
+            cards = status == null
+                    ? cardRepository.findByOwnerId(currentUser.getId(), pageable)
+                    : cardRepository.findByOwnerIdAndStatus(currentUser.getId(), status, pageable);
+        }
         return cards.map(this::toResponse);
     }
 
@@ -160,6 +178,18 @@ public class CardService {
 
     private CardStatus resolveInitialStatus(LocalDate expiryDate) {
         return expiryDate.isBefore(LocalDate.now()) ? CardStatus.EXPIRED : CardStatus.ACTIVE;
+    }
+
+    private boolean hasSearch(String search) {
+        return search != null && !search.isBlank();
+    }
+
+    private String normalizeSearch(String search) {
+        String digits = CardNumberUtils.normalize(search);
+        if (digits.length() != 4) {
+            throw new IllegalArgumentException("Search query must contain exactly 4 digits");
+        }
+        return digits;
     }
 
     private User getCurrentUser() {
