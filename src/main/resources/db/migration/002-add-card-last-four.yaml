@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-card-last-four-digits
+      author: bankcards
+      changes:
+        - addColumn:
+            tableName: cards
+            columns:
+              - column:
+                  name: last_four_digits
+                  type: VARCHAR(4)
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_last_four_digits
+            columns:
+              - column:
+                  name: last_four_digits
