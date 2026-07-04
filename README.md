@@ -1,105 +1,71 @@
-<h1>🚀 Разработка Системы Управления Банковскими Картами</h1>
+# Система управления банковскими картами
 
-<h2>📁 Стартовая структура</h2>
-  <p>
-    Проектная структура с директориями и описательными файлами (<code>README Controller.md</code>, <code>README Service.md</code> и т.д.) уже подготовлена.<br />
-    Все реализации нужно добавлять <strong>в соответствующие директории</strong>.
-  </p>
-  <p>
-    После завершения разработки <strong>временные README-файлы нужно удалить</strong>, чтобы они не попадали в итоговую сборку.
-  </p>
-  
-<h2>📝 Описание задачи</h2>
-  <p>Разработать backend-приложение на Java (Spring Boot) для управления банковскими картами:</p>
-  <ul>
-    <li>Создание и управление картами</li>
-    <li>Просмотр карт</li>
-    <li>Переводы между своими картами</li>
-  </ul>
+Backend REST API (Java 21, Spring Boot, PostgreSQL) для управления банковскими картами, пользователями и переводами.
 
-<h2>💳 Атрибуты карты</h2>
-  <ul>
-    <li>Номер карты (зашифрован, отображается маской: <code>**** **** **** 1234</code>)</li>
-    <li>Владелец</li>
-    <li>Срок действия</li>
-    <li>Статус: Активна, Заблокирована, Истек срок</li>
-    <li>Баланс</li>
-  </ul>
+## Требования
 
-<h2>🧾 Требования</h2>
+- Java 21+
+- Maven 3.9+
+- Docker и Docker Compose
 
-<h3>✅ Аутентификация и авторизация</h3>
-  <ul>
-    <li>Spring Security + JWT</li>
-    <li>Роли: <code>ADMIN</code> и <code>USER</code></li>
-  </ul>
+## Запуск
 
-<h3>✅ Возможности</h3>
-<strong>Администратор:</strong>
-  <ul>
-    <li>Создаёт, блокирует, активирует, удаляет карты</li>
-    <li>Управляет пользователями</li>
-    <li>Видит все карты</li>
-  </ul>
+### 1. Переменные окружения
 
-<strong>Пользователь:</strong>
-  <ul>
-    <li>Просматривает свои карты (поиск + пагинация)</li>
-    <li>Запрашивает блокировку карты</li>
-    <li>Делает переводы между своими картами</li>
-    <li>Смотрит баланс</li>
-  </ul>
+```bash
+cp .env.example .env
+```
 
-<h3>✅ API</h3>
-  <ul>
-    <li>CRUD для карт</li>
-    <li>Переводы между своими картами</li>
-    <li>Фильтрация и постраничная выдача</li>
-    <li>Валидация и сообщения об ошибках</li>
-  </ul>
+В `.env` задайте `JWT_SECRET` (не короче 32 символов).
 
-<h3>✅ Безопасность</h3>
-  <ul>
-    <li>Шифрование данных</li>
-    <li>Ролевой доступ</li>
-    <li>Маскирование номеров карт</li>
-  </ul>
+### 2. PostgreSQL
 
-<h3>✅ Работа с БД</h3>
-  <ul>
-    <li>PostgreSQL или MySQL</li>
-    <li>Миграции через Liquibase (<code>src/main/resources/db/migration</code>)</li>
-  </ul>
+```bash
+docker compose up -d postgres
+```
 
-<h3>✅ Документация</h3>
-  <ul>
-    <li>Swagger UI / OpenAPI — <code>docs/openapi.yaml</code></li>
-    <li><code>README.md</code> с инструкцией запуска</li>
-  </ul>
+### 3. Приложение (локально)
 
-<h3>✅ Развёртывание и тестирование</h3>
-  <ul>
-    <li>Docker Compose для dev-среды</li>
-    <li>Liquibase миграции</li>
-    <li>Юнит-тесты ключевой бизнес-логики</li>
-  </ul>
+```bash
+set -a && source .env && set +a
+mvn spring-boot:run
+```
 
-<h2>📊 Оценка</h2>
-  <ul>
-    <li>Соответствие требованиям</li>
-    <li>Чистота архитектуры и кода</li>
-    <li>Безопасность</li>
-    <li>Обработка ошибок</li>
-    <li>Покрытие тестами</li>
-    <li>ООП и уровни абстракции</li>
-  </ul>
+### 4. Приложение (Docker Compose)
 
-<h2>💡 Технологии</h2>
-  <p>
-    Java 17+, Spring Boot, Spring Security, Spring Data JPA, PostgreSQL/MySQL, Liquibase, Docker, JWT, Swagger (OpenAPI)
-  </p>
+```bash
+docker compose up --build
+```
 
-<h2> 📤 Формат сдачи</h2>
-<p>
-Весь код и изменения принимаются только через git-репозиторий с открытым доступом к проекту. Отправка файлов в любом виде не принимается.
-  </p>
+Приложение: http://localhost:8080  
+Swagger UI: http://localhost:8080/swagger-ui/index.html  
+OpenAPI: [docs/openapi.yaml](docs/openapi.yaml)
+
+Авторизация: заголовок `Authorization: Bearer <JWT>` (токен из `/api/auth/login`).
+
+## Postman
+
+Для удобства тестирования API добавлена коллекция: [docs/postman_collection.json](docs/postman_collection.json).
+
+Импорт: Postman → **Import** → выбрать файл. После **Login** JWT сохраняется в переменную `token` автоматически.
+
+### Первый ADMIN
+
+Регистрация через API создаёт пользователя с ролью `USER`. Роль ADMIN назначается в БД:
+
+```bash
+docker exec -it bankcards-postgres psql -U bankcards -d bankcards
+```
+
+```sql
+INSERT INTO user_roles (user_id, role_id)
+SELECT 1, id FROM roles WHERE name = 'ADMIN';
+```
+
+(`1` — id пользователя из `SELECT id, username FROM users;`. После назначения роли выполните Login заново.)
+
+## Тесты
+
+```bash
+mvn test
+```
