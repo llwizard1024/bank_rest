@@ -1,6 +1,8 @@
 package com.example.bankcards.repository;
 
 import com.example.bankcards.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,6 +13,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @EntityGraph(attributePaths = "roles")
     Optional<User> findWithRolesByUsername(String username);
+
+    @EntityGraph(attributePaths = "roles")
+    @Override
+    Optional<User> findById(Long id);
+
+    @EntityGraph(attributePaths = "roles")
+    @Override
+    Page<User> findAll(Pageable pageable);
 
     boolean existsByUsername(String username);
 }
