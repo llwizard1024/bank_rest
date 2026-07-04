@@ -26,6 +26,9 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+card:
+  encryption-key: ${CARD_ENCRYPTION_KEY:${JWT_SECRET}}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
