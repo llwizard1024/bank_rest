@@ -17,6 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -78,6 +82,7 @@ class CardServiceTest {
         when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
             Card card = invocation.getArgument(0);
+            assertEquals("1111", card.getLastFourDigits());
             card.setId(10L);
             return card;
         });
@@ -199,6 +204,35 @@ class CardServiceTest {
         cardService.deleteCard(5L);
 
         verify(cardRepository).delete(card);
+    }
+
+    @Test
+    void getMyCards_searchByLastFourDigits() {
+        authenticateAs("bob", "ROLE_USER");
+
+        User owner = user(1L, "bob");
+        Pageable pageable = PageRequest.of(0, 20);
+        Card card = card(5L, owner, CardStatus.ACTIVE, LocalDate.now().plusYears(1));
+
+        when(userRepository.findByUsername("bob")).thenReturn(Optional.of(owner));
+        when(cardRepository.findByOwnerIdAndLastFourDigits(1L, "1111", pageable))
+                .thenReturn(new PageImpl<>(List.of(card), pageable, 1));
+        when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
+
+        var result = cardService.getMyCards(null, "1111", pageable);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("**** **** **** 1111", result.getContent().getFirst().getMaskedNumber());
+    }
+
+    @Test
+    void getMyCards_searchRejectsInvalidLength() {
+        authenticateAs("bob", "ROLE_USER");
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> cardService.getMyCards(null, "12", PageRequest.of(0, 20))
+        );
     }
 
     @Test

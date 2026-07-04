@@ -39,4 +39,10 @@ class CardNumberUtilsTest {
     void mask_throwsForTooShortInput() {
         assertThrows(IllegalArgumentException.class, () -> CardNumberUtils.mask("123"));
     }
+
+    @Test
+    void lastFour_returnsLastFourDigits() {
+        assertEquals("1111", CardNumberUtils.lastFour("4111111111111111"));
+        assertEquals("4444", CardNumberUtils.lastFour("5555 5555 5555 4444"));
+    }
 }
