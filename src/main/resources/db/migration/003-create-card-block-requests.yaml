@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-card-block-requests
+      author: bankcards
+      changes:
+        - createTable:
+            tableName: card_block_requests
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: card_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: requested_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: processed_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: processed_by
+                  type: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: card_block_requests
+            baseColumnNames: card_id
+            referencedTableName: cards
+            referencedColumnNames: id
+            constraintName: fk_block_requests_card
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: card_block_requests
+            baseColumnNames: requested_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_block_requests_requested_by
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: card_block_requests
+            baseColumnNames: processed_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_block_requests_processed_by
+            onDelete: RESTRICT
+        - createIndex:
+            tableName: card_block_requests
+            indexName: idx_block_requests_card_id
+            columns:
+              - column:
+                  name: card_id
+        - createIndex:
+            tableName: card_block_requests
+            indexName: idx_block_requests_status
+            columns:
+              - column:
+                  name: status
