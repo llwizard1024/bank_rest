@@ -1,5 +1,6 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.TestDates;
 import com.example.bankcards.dto.transfer.TransferRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
@@ -181,7 +182,7 @@ class TransferServiceTest {
                 .encryptedCardNumber(ENCRYPTED)
                 .owner(owner)
                 .status(CardStatus.ACTIVE)
-                .expiryDate(LocalDate.now().plusYears(1))
+                .expiryDate(TestDates.FUTURE_EXPIRY)
                 .balance(balance)
                 .build();
     }

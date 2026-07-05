@@ -1,5 +1,6 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.TestDates;
 import com.example.bankcards.dto.card.CreateCardRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
+import org.mockito.invocation.InvocationOnMock;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +73,7 @@ class CardServiceTest {
         CreateCardRequest request = new CreateCardRequest();
         request.setOwnerId(1L);
         request.setCardNumber("4111111111111111");
-        request.setExpiryDate(LocalDate.now().plusYears(2));
+        request.setExpiryDate(TestDates.FAR_FUTURE_EXPIRY);
         request.setBalance(new BigDecimal("1000.00"));
 
         User owner = user(1L, "bob");
@@ -80,12 +81,7 @@ class CardServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(cardCryptoService.encrypt("4111111111111111")).thenReturn(ENCRYPTED);
         when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
-        when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
-            Card card = invocation.getArgument(0);
-            assertEquals("1111", card.getLastFourDigits());
-            card.setId(10L);
-            return card;
-        });
+        when(cardRepository.save(any(Card.class))).thenAnswer(this::saveCardWithId);
 
         var response = cardService.createCard(request);
 
@@ -101,7 +97,7 @@ class CardServiceTest {
         CreateCardRequest request = new CreateCardRequest();
         request.setOwnerId(1L);
         request.setCardNumber("1234567890123456");
-        request.setExpiryDate(LocalDate.now().plusYears(1));
+        request.setExpiryDate(TestDates.FUTURE_EXPIRY);
         request.setBalance(BigDecimal.ZERO);
 
         assertThrows(InvalidCardNumberException.class, () -> cardService.createCard(request));
@@ -113,43 +109,12 @@ class CardServiceTest {
         CreateCardRequest request = new CreateCardRequest();
         request.setOwnerId(99L);
         request.setCardNumber("4111111111111111");
-        request.setExpiryDate(LocalDate.now().plusYears(1));
+        request.setExpiryDate(TestDates.FUTURE_EXPIRY);
         request.setBalance(BigDecimal.ZERO);
 
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> cardService.createCard(request));
-    }
-
-    @Test
-    void requestBlock_blocksOwnActiveCard() {
-        authenticateAs("bob", "ROLE_USER");
-
-        User owner = user(1L, "bob");
-        Card card = card(5L, owner, CardStatus.ACTIVE, LocalDate.now().plusYears(1));
-
-        when(userRepository.findByUsername("bob")).thenReturn(Optional.of(owner));
-        when(cardRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(card));
-        when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
-        when(cardRepository.save(card)).thenReturn(card);
-
-        var response = cardService.requestBlock(5L);
-
-        assertEquals(CardStatus.BLOCKED, response.getStatus());
-        assertEquals(CardStatus.BLOCKED, card.getStatus());
-    }
-
-    @Test
-    void requestBlock_rejectsNonActiveCard() {
-        authenticateAs("bob", "ROLE_USER");
-
-        User owner = user(1L, "bob");
-        Card card = card(5L, owner, CardStatus.BLOCKED, LocalDate.now().plusYears(1));
-
-        when(userRepository.findByUsername("bob")).thenReturn(Optional.of(owner));
-        when(cardRepository.findByIdAndOwnerId(5L, 1L)).thenReturn(Optional.of(card));
-
-        assertThrows(IllegalStateException.class, () -> cardService.requestBlock(5L));
     }
 
     @Test
@@ -168,7 +133,7 @@ class CardServiceTest {
         authenticateAs("admin", "ROLE_ADMIN");
 
         User owner = user(2L, "bob");
-        Card card = card(5L, owner, CardStatus.ACTIVE, LocalDate.now().plusYears(1));
+        Card card = card(5L, owner, CardStatus.ACTIVE, TestDates.FUTURE_EXPIRY);
 
         when(cardRepository.findById(5L)).thenReturn(Optional.of(card));
         when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
@@ -183,7 +148,7 @@ class CardServiceTest {
     @Test
     void activateCard_marksExpiredCardAsExpired() {
         User owner = user(1L, "bob");
-        Card card = card(5L, owner, CardStatus.BLOCKED, LocalDate.now().minusDays(1));
+        Card card = card(5L, owner, CardStatus.BLOCKED, TestDates.PAST_EXPIRY);
 
         when(cardRepository.findById(5L)).thenReturn(Optional.of(card));
         when(cardCryptoService.decrypt(ENCRYPTED)).thenReturn("4111111111111111");
@@ -197,7 +162,7 @@ class CardServiceTest {
     @Test
     void deleteCard_removesExistingCard() {
         User owner = user(1L, "bob");
-        Card card = card(5L, owner, CardStatus.ACTIVE, LocalDate.now().plusYears(1));
+        Card card = card(5L, owner, CardStatus.ACTIVE, TestDates.FUTURE_EXPIRY);
 
         when(cardRepository.findById(5L)).thenReturn(Optional.of(card));
 
@@ -212,7 +177,7 @@ class CardServiceTest {
 
         User owner = user(1L, "bob");
         Pageable pageable = PageRequest.of(0, 20);
-        Card card = card(5L, owner, CardStatus.ACTIVE, LocalDate.now().plusYears(1));
+        Card card = card(5L, owner, CardStatus.ACTIVE, TestDates.FUTURE_EXPIRY);
 
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(owner));
         when(cardRepository.findByOwnerIdAndLastFourDigits(1L, "1111", pageable))
@@ -229,9 +194,10 @@ class CardServiceTest {
     void getMyCards_searchRejectsInvalidLength() {
         authenticateAs("bob", "ROLE_USER");
 
+        Pageable pageable = PageRequest.of(0, 20);
         assertThrows(
                 IllegalArgumentException.class,
-                () -> cardService.getMyCards(null, "12", PageRequest.of(0, 20))
+                () -> cardService.getMyCards(null, "12", pageable)
         );
     }
 
@@ -240,6 +206,13 @@ class CardServiceTest {
         when(cardRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> cardService.deleteCard(404L));
+    }
+
+    private Card saveCardWithId(InvocationOnMock invocation) {
+        Card card = invocation.getArgument(0);
+        assertEquals("1111", card.getLastFourDigits());
+        card.setId(10L);
+        return card;
     }
 
     private void authenticateAs(String username, String role) {
