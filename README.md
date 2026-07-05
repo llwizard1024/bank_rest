@@ -18,23 +18,20 @@ cp .env.example .env
 
 В `.env` задайте `JWT_SECRET` (не короче 32 символов).
 
-### 2. PostgreSQL
+### 2. Запуск
+
+```bash
+docker compose up -d
+```
+
+### 3. Запуск для локальной разработки
 
 ```bash
 docker compose up -d postgres
-```
 
-### 3. Приложение (локально)
-
-```bash
 set -a && source .env && set +a
+
 mvn spring-boot:run
-```
-
-### 4. Приложение (Docker Compose)
-
-```bash
-docker compose up --build
 ```
 
 Приложение: http://localhost:8080  
