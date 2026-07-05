@@ -1,8 +1,10 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.blockrequest.BlockRequestResponse;
 import com.example.bankcards.dto.card.CardResponse;
 import com.example.bankcards.dto.card.CreateCardRequest;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.service.BlockRequestService;
 import com.example.bankcards.service.CardService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -26,9 +28,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 public class CardController {
 
     private final CardService cardService;
+    private final BlockRequestService blockRequestService;
 
-    public CardController(CardService cardService) {
+    public CardController(CardService cardService, BlockRequestService blockRequestService) {
         this.cardService = cardService;
+        this.blockRequestService = blockRequestService;
     }
 
     @PostMapping
@@ -76,8 +80,9 @@ public class CardController {
 
     @PostMapping("/{id}/block-request")
     @PreAuthorize("hasRole('USER')")
-    public CardResponse requestBlock(@PathVariable Long id) {
-        return cardService.requestBlock(id);
+    @ResponseStatus(HttpStatus.CREATED)
+    public BlockRequestResponse requestBlock(@PathVariable Long id) {
+        return blockRequestService.createRequest(id);
     }
 
     @DeleteMapping("/{id}")

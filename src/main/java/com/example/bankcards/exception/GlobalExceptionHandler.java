@@ -21,6 +21,11 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(BlockRequestNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleBlockRequestNotFound(BlockRequestNotFoundException ex) {
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         return buildError(HttpStatus.UNAUTHORIZED, "Invalid username or password");

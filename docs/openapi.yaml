@@ -17,6 +17,8 @@ tags:
     description: Transfers between own cards
   - name: Users
     description: User administration (ADMIN only)
+  - name: Block Requests
+    description: Card block requests (USER creates, ADMIN processes)
 
 paths:
   /api/auth/register:
@@ -242,19 +244,100 @@ paths:
     post:
       tags: [Cards]
       summary: Request card block
-      description: USER only. Blocks own ACTIVE card.
+      description: USER only. Creates a pending block request; card remains active until ADMIN approves.
       operationId: requestBlock
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/cardId'
       responses:
-        '200':
-          description: Card blocked
+        '201':
+          description: Block request created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardResponse'
+                $ref: '#/components/schemas/BlockRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/block-requests:
+    get:
+      tags: [Block Requests]
+      summary: List block requests
+      description: ADMIN only. Supports filtering by status.
+      operationId: getAllBlockRequests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/BlockRequestStatus'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Paginated list of block requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageBlockRequestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/block-requests/{id}/approve:
+    patch:
+      tags: [Block Requests]
+      summary: Approve block request
+      description: ADMIN only. Blocks the card and marks the request as approved.
+      operationId: approveBlockRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/blockRequestId'
+      responses:
+        '200':
+          description: Block request approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/block-requests/{id}/reject:
+    patch:
+      tags: [Block Requests]
+      summary: Reject block request
+      description: ADMIN only. Rejects the request; card status is unchanged.
+      operationId: rejectBlockRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/blockRequestId'
+      responses:
+        '200':
+          description: Block request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockRequestResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -443,6 +526,13 @@ components:
       schema:
         type: integer
         format: int64
+    blockRequestId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
     statusFilter:
       name: status
       in: query
@@ -521,6 +611,37 @@ components:
     CardStatus:
       type: string
       enum: [ACTIVE, BLOCKED, EXPIRED]
+
+    BlockRequestStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+
+    BlockRequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cardId:
+          type: integer
+          format: int64
+        maskedNumber:
+          type: string
+          example: '**** **** **** 1111'
+        status:
+          $ref: '#/components/schemas/BlockRequestStatus'
+        requestedByUsername:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        processedByUsername:
+          type: string
+          nullable: true
 
     RegisterRequest:
       type: object
@@ -704,6 +825,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TransferResponse'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+
+    PageBlockRequestResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockRequestResponse'
         totalElements:
           type: integer
           format: int64

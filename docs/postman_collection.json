@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "bank-rest-api-collection",
     "name": "Bank Cards API",
-    "description": "Коллекция для bank_rest (localhost:8080).\n\nПорядок:\n1. Register → Login (токен сохранится автоматически)\n2. ADMIN: Create User / Create Card\n3. USER: My Cards, Transfer\n\nПереводы — только между своими картами (один ownerId).\n\nТестовые номера карт (Luhn): 4111111111111111, 5555555555554444",
+    "description": "Коллекция для bank_rest (localhost:8080).\n\nПорядок:\n1. Register → Login (токен сохранится автоматически)\n2. ADMIN: Create User / Create Card\n3. USER: My Cards, Block Request (заявка на блокировку)\n4. ADMIN: Approve/Reject Block Request\n5. USER: Transfer (между своими картами)\n\nТестовые номера карт (Luhn): 4111111111111111, 5555555555554444",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -22,7 +22,8 @@
     { "key": "password", "value": "password123" },
     { "key": "userId", "value": "1" },
     { "key": "cardId", "value": "1" },
-    { "key": "cardId2", "value": "2" }
+    { "key": "cardId2", "value": "2" },
+    { "key": "blockRequestId", "value": "1" }
   ],
   "item": [
     {
@@ -189,6 +190,19 @@
         },
         {
           "name": "Block Request (USER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('blockRequestId', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/api/cards/{{cardId}}/block-request"
@@ -199,6 +213,41 @@
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}/api/cards/{{cardId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Block Requests (ADMIN)",
+      "item": [
+        {
+          "name": "Get Block Requests",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/block-requests?status=PENDING&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "block-requests"],
+              "query": [
+                { "key": "status", "value": "PENDING" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Block Request",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/block-requests/{{blockRequestId}}/approve"
+          }
+        },
+        {
+          "name": "Reject Block Request",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/block-requests/{{blockRequestId}}/reject"
           }
         }
       ]

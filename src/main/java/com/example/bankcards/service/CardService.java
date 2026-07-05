@@ -121,20 +121,6 @@ public class CardService {
     }
 
     @Transactional
-    public CardResponse requestBlock(Long id) {
-        User currentUser = getCurrentUser();
-        Card card = cardRepository.findByIdAndOwnerId(id, currentUser.getId())
-                .orElseThrow(() -> new CardNotFoundException(id));
-
-        if (card.getStatus() != CardStatus.ACTIVE) {
-            throw new IllegalStateException("Only active cards can be blocked");
-        }
-
-        card.setStatus(CardStatus.BLOCKED);
-        return toResponse(cardRepository.save(card));
-    }
-
-    @Transactional
     public void deleteCard(Long id) {
         Card card = getCardOrThrow(id);
         cardRepository.delete(card);
